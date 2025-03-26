@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using LogComponent;
+﻿using LogComponent;
 
 namespace LogUsers
 {
@@ -33,6 +28,7 @@ namespace LogUsers
 
             logger2.StopWithoutFlush();
 
+            Console.WriteLine("Program Completed!\nPress any key to exit");
             Console.ReadLine();
         }
     }

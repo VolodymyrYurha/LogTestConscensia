@@ -1,110 +1,80 @@
-﻿using System.Text;
+﻿using System.Collections.Concurrent;
+using System.Text;
 
 namespace LogComponent
 {
     public class AsyncLog : ILog
     {
-        private Thread _runThread;
-        private List<LogLine> _lines = new List<LogLine>();
+        private StreamWriter _writer;
 
-        private StreamWriter _writer; 
+        private Thread _runThread;
+        private ConcurrentQueue<LogLine> _logQueue = new ConcurrentQueue<LogLine>();
 
         private bool _exit;
+        private bool _quitWithFlush = false;
+        private DateTime _currentDate = DateTime.Now;
 
         public AsyncLog()
         {
-            if (!Directory.Exists(@"C:\LogTest")) 
+            if (!Directory.Exists(@"C:\LogTest"))
                 Directory.CreateDirectory(@"C:\LogTest");
 
-            this._writer = File.AppendText(@"C:\LogTest\Log" + DateTime.Now.ToString("yyyyMMdd HHmmss fff") + ".log");
-            
-            this._writer.Write("Timestamp".PadRight(25, ' ') + "\t" + "Data".PadRight(15, ' ') + "\t" + Environment.NewLine);
+            _writer = File.AppendText(@"C:\LogTest\Log" + DateTime.Now.ToString("yyyyMMdd HHmmss fff") + ".log");
 
-            this._writer.AutoFlush = true;
+            _writer.Write("Timestamp".PadRight(25, ' ') + "\t" + "Data".PadRight(15, ' ') + "\t" + Environment.NewLine);
+            _writer.AutoFlush = true;
 
-            this._runThread = new Thread(this.MainLoop);
-            this._runThread.Start();
+            _runThread = new Thread(MainLoop);
+            _runThread.Start();
         }
-
-        private bool _QuitWithFlush = false;
-
-
-        DateTime _curDate = DateTime.Now;
-
+            
         private void MainLoop()
         {
-            while (!this._exit)
+            while (!_exit)
             {
-                if (this._lines.Count > 0)
+                if (_logQueue.TryDequeue(out LogLine logLine))
                 {
-                    int f = 0;
-                    List<LogLine> _handled = new List<LogLine>();
+                    StringBuilder stringBuilder = new StringBuilder();
 
-                    foreach (LogLine logLine in this._lines)
+                    if ((DateTime.Now - _currentDate).Days != 0)
                     {
-                        f++;
-
-                        if (f > 5)
-                            continue;
-                        
-                        if (!this._exit || this._QuitWithFlush)
-                        {
-                            _handled.Add(logLine);
-
-                            StringBuilder stringBuilder = new StringBuilder();
-
-                            if ((DateTime.Now - _curDate).Days != 0)
-                            {
-                                _curDate = DateTime.Now;
-
-                                this._writer = File.AppendText(@"C:\LogTest\Log" + DateTime.Now.ToString("yyyyMMdd HHmmss fff") + ".log");
-
-                                this._writer.Write("Timestamp".PadRight(25, ' ') + "\t" + "Data".PadRight(15, ' ') + "\t" + Environment.NewLine);
-
-                                stringBuilder.Append(Environment.NewLine);
-
-                                this._writer.Write(stringBuilder.ToString());
-
-                                this._writer.AutoFlush = true;
-                            }
-
-                            stringBuilder.Append(logLine.Timestamp.ToString("yyyy-MM-dd HH:mm:ss:fff"));
-                            stringBuilder.Append("\t");
-                            stringBuilder.Append(logLine.LineText());
-                            stringBuilder.Append("\t");
-
-                            stringBuilder.Append(Environment.NewLine);
-
-                            this._writer.Write(stringBuilder.ToString());
-                        }
+                        _currentDate = DateTime.Now;
+                        _writer = File.AppendText(@"C:\LogTest\Log" + DateTime.Now.ToString("yyyyMMdd HHmmss fff") + ".log");
+                        _writer.Write("Timestamp".PadRight(25, ' ') + "\t" + "Data".PadRight(15, ' ') + "\t" + Environment.NewLine);
+                        _writer.AutoFlush = true;
                     }
 
-                    for (int y = 0; y < _handled.Count; y++)
-                    {
-                        this._lines.Remove(_handled[y]);   
-                    }
+                    stringBuilder.Append(logLine.Timestamp.ToString("yyyy-MM-dd HH:mm:ss:fff"));
+                    stringBuilder.Append("\t");
+                    stringBuilder.Append(logLine.LineText());
+                    stringBuilder.Append("\t");
+                    stringBuilder.Append(Environment.NewLine);
 
-                    if (this._QuitWithFlush == true && this._lines.Count == 0) 
-                        this._exit = true;
-
-                    Thread.Sleep(50);
+                    _writer.Write(stringBuilder.ToString());
                 }
+
+                if (_quitWithFlush && _logQueue.IsEmpty)
+                {
+                    _exit = true;
+                }
+
+                Thread.Sleep(50);
             }
         }
 
         public void StopWithoutFlush()
         {
-            this._exit = true;
+            _exit = true;
         }
 
         public void StopWithFlush()
         {
-            this._QuitWithFlush = true;
+            _quitWithFlush = true;
         }
 
         public void Write(string text)
         {
-            this._lines.Add(new LogLine() { Text = text, Timestamp = DateTime.Now });
+            _logQueue.Enqueue(new LogLine() { Text = text, Timestamp = DateTime.Now });
         }
     }
 }
