@@ -96,6 +96,32 @@ namespace LogComponent.Tests
                 "Second log file should contain only the last 2 logs.");
         }
 
+        [Test]
+        public void WriteWithoutFlush_WhenInterrupted_ShouldDiscardPendingLogs()
+        {
+            // Arrange
+            var logger = new AsyncLog();
+
+            // Act
+            for (int i = 50; i > 0; i--)
+            {
+                logger.Write("Number with No flush: " + i.ToString());
+            }
+
+            // Wait for some time to allow the thread to write couple of logs but not all of them
+            Thread.Sleep(150);
+            logger.StopWithoutFlush();
+
+            var fileContent = File.ReadAllText(GetTestFiles().Last());
+            var numberOfRows = fileContent.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries).Length;
+
+            // Assert
+            Assert.That(fileContent, Does.Not.Contain("Number with No flush: 1"), "The last log should not be written.");
+            Assert.That(fileContent, Does.Contain("Number with No flush: 50"), "This expected log should be present.");
+            Assert.That(numberOfRows, Is.GreaterThan(2).And.LessThan(49), "The number of log rows should be between 2 and 49.");
+        }
+
+
         [TearDown]
         public void TearDown()
         {
@@ -119,11 +145,12 @@ namespace LogComponent.Tests
 
             return new DateTime(randomDate.Year, randomDate.Month, randomDate.Day, hour, minute, second);
         }
+        
         private string[] GetDirectoryLogFiles()
         {
             return Directory.GetFiles(_logDirectory, "*.log").OrderBy(f => new FileInfo(f).CreationTime).ToArray();
         }
-
+        
         private string[] GetTestFiles()
         {
             var currentFiles = GetDirectoryLogFiles();

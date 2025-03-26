@@ -24,8 +24,8 @@ namespace LogComponent
             if (!Directory.Exists(@"C:\LogTest"))
                 Directory.CreateDirectory(@"C:\LogTest");
 
-            _writer = File.AppendText(@"C:\LogTest\Log" + _dateTimeProvider.Now.ToString("yyyyMMdd HHmmss fff") + ".log");
 
+            _writer = File.AppendText(@"C:\LogTest\Log" + _dateTimeProvider.Now.ToString("yyyyMMdd HHmmss fff") + ".log");
             _writer.Write("TimeStamp".PadRight(25, ' ') + "\t" + "Data".PadRight(15, ' ') + "\t" + Environment.NewLine);
             _writer.AutoFlush = true;
 
@@ -64,6 +64,12 @@ namespace LogComponent
         public void StopWithoutFlush()
         {
             _exitFlag = true;
+
+            // Making a loop to wait for the log queue to be empty
+            while (!_loopFinishedFlag)
+            {
+                Thread.Sleep(50);
+            }
         }
 
         public void StopWithFlush()
