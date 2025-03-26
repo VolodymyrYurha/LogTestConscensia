@@ -28,7 +28,6 @@ namespace LogUsers
 
             logger2.StopWithoutFlush();
 
-            Console.WriteLine("Program Completed!\nPress any key to exit");
             Console.ReadLine();
         }
     }
