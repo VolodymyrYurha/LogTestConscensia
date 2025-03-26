@@ -19,15 +19,11 @@ namespace LogComponent
         public AsyncLog(IDateTimeProvider? timeProvider = null)
         {
             _dateTimeProvider = timeProvider ?? new SystemTimeProvider();
-            _currentDate = _dateTimeProvider.Now;
 
             if (!Directory.Exists(@"C:\LogTest"))
                 Directory.CreateDirectory(@"C:\LogTest");
 
-
-            _writer = File.AppendText(@"C:\LogTest\Log" + _dateTimeProvider.Now.ToString("yyyyMMdd HHmmss fff") + ".log");
-            _writer.Write("TimeStamp".PadRight(25, ' ') + "\t" + "Data".PadRight(15, ' ') + "\t" + Environment.NewLine);
-            _writer.AutoFlush = true;
+            InitWriter();
 
             _runThread = new Thread(MainLoop);
             _runThread.Start();
@@ -65,22 +61,14 @@ namespace LogComponent
         {
             _exitFlag = true;
 
-            // Making a loop to wait for the log queue to be empty
-            while (!_loopFinishedFlag)
-            {
-                Thread.Sleep(50);
-            }
+            SpinWait.SpinUntil(() => _loopFinishedFlag, timeout: TimeSpan.FromSeconds(5));
         }
 
         public void StopWithFlush()
         {
             _quitWithFlushFlag = true;
 
-            // Making a loop to wait for the log queue to be empty
-            while(!_loopFinishedFlag)
-            {
-                Thread.Sleep(50);
-            }
+            SpinWait.SpinUntil(() => _loopFinishedFlag, timeout: TimeSpan.FromSeconds(5));
         }
 
         public void Write(string text)
@@ -94,10 +82,7 @@ namespace LogComponent
             if (_currentDate.Date != timeStamp.Date)
             {
                 CloseWriterIfExist();
-                _currentDate = _dateTimeProvider.Now;
-                _writer = File.AppendText(@"C:\LogTest\Log" + _dateTimeProvider.Now.ToString("yyyyMMdd HHmmss fff") + ".log");
-                _writer.Write("Timestamp".PadRight(25, ' ') + "\t" + "Data".PadRight(15, ' ') + "\t" + Environment.NewLine);
-                _writer.AutoFlush = true;
+                InitWriter();
             }
         }
 
@@ -110,6 +95,15 @@ namespace LogComponent
                 _writer.Dispose(); 
             }
         }
+
+        private void InitWriter()
+        {
+            _currentDate = _dateTimeProvider.Now;
+            _writer = File.AppendText(@"C:\LogTest\Log" + _dateTimeProvider.Now.ToString("yyyyMMdd HHmmss fff") + ".log");
+            _writer.Write("Timestamp".PadRight(25, ' ') + "\t" + "Data".PadRight(15, ' ') + "\t" + Environment.NewLine);
+            _writer.AutoFlush = true;
+        }
+
         private void FinalizeLogging()
         {
             CloseWriterIfExist();
