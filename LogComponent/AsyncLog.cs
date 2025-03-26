@@ -5,8 +5,10 @@ namespace LogComponent
 {
     public class AsyncLog : ILog
     {
+        private readonly IDateTimeProvider _dateTimeProvider;
+        private readonly IDirectoryProvider _directoryProvider;
+
         private StreamWriter _writer;
-        private IDateTimeProvider _dateTimeProvider;
 
         private Thread _runThread;
         private ConcurrentQueue<LogLine> _logQueue = new ConcurrentQueue<LogLine>();
@@ -16,12 +18,10 @@ namespace LogComponent
         private bool _loopFinishedFlag = false;
         private DateTime _currentDate;
 
-        public AsyncLog(IDateTimeProvider? timeProvider = null)
+        public AsyncLog(IDateTimeProvider? timeProvider = null, IDirectoryProvider? directoryProvider = null)
         {
             _dateTimeProvider = timeProvider ?? new SystemTimeProvider();
-
-            if (!Directory.Exists(@"C:\LogTest"))
-                Directory.CreateDirectory(@"C:\LogTest");
+            _directoryProvider = directoryProvider ?? new DirectoryProvider();
 
             InitWriter();
 
@@ -36,15 +36,10 @@ namespace LogComponent
                 if (_logQueue.TryDequeue(out LogLine? logLine))
                 {
                     EnsureLogFileForDay(logLine.TimeStamp);
-                    
-                    StringBuilder stringBuilder = new StringBuilder();
-                    stringBuilder.Append(logLine.TimeStamp.ToString("yyyy-MM-dd HH:mm:ss:fff"));
-                    stringBuilder.Append("\t");
-                    stringBuilder.Append(logLine.LineText());
-                    stringBuilder.Append("\t");
-                    stringBuilder.Append(Environment.NewLine);
 
-                    _writer.Write(stringBuilder.ToString());
+                    string logContent = $"{logLine.TimeStamp.ToString("yyyy-MM-dd HH:mm:ss:fff")}\t{logLine.LineText()}\t{Environment.NewLine}";
+
+                    _writer.Write(logContent);
                 }
 
                 if (_quitWithFlushFlag && _logQueue.IsEmpty)
@@ -99,7 +94,7 @@ namespace LogComponent
         private void InitWriter()
         {
             _currentDate = _dateTimeProvider.Now;
-            _writer = File.AppendText(@"C:\LogTest\Log" + _dateTimeProvider.Now.ToString("yyyyMMdd HHmmss fff") + ".log");
+            _writer = File.AppendText(Path.Combine(_directoryProvider.GetLogDirectory(), "Log" + _dateTimeProvider.Now.ToString("yyyyMMdd HHmmss fff") + ".log"));
             _writer.Write("Timestamp".PadRight(25, ' ') + "\t" + "Data".PadRight(15, ' ') + "\t" + Environment.NewLine);
             _writer.AutoFlush = true;
         }

@@ -5,11 +5,14 @@ namespace LogComponent.Tests
     {
         private string _logDirectory;
         private string[] _initialFiles;
+        private IDirectoryProvider _directoryProvider;
 
         [SetUp]
         public void SetUp()
         {
-            _logDirectory = @"C:\LogTest";
+            _directoryProvider = new DirectoryProvider(logType: LogType.Test);
+
+            _logDirectory = _directoryProvider.GetLogDirectory();
 
             if (!Directory.Exists(_logDirectory))
             {
@@ -23,7 +26,7 @@ namespace LogComponent.Tests
         public void Write_WhenCalled_ShouldWriteLogToFile()
         {
             // Arrange
-            var logger = new AsyncLog();
+            var logger = new AsyncLog(directoryProvider: _directoryProvider);
             var faker = new Faker();
 
             // Act
@@ -48,7 +51,7 @@ namespace LogComponent.Tests
         {
             // Arrange
             var mockTimeProvider = new MockTimeProvider(GetRandomDateWithTime(23, 59, 50)); // 10 sec. before midnight
-            var logger = new AsyncLog(mockTimeProvider);
+            var logger = new AsyncLog(mockTimeProvider, directoryProvider: _directoryProvider);
             string[] testMessages = new string[]
             {
                 "First log message [23:59:00]",
@@ -100,7 +103,7 @@ namespace LogComponent.Tests
         public void WriteWithoutFlush_WhenInterrupted_ShouldDiscardPendingLogs()
         {
             // Arrange
-            var logger = new AsyncLog();
+            var logger = new AsyncLog(directoryProvider: _directoryProvider);
 
             // Act
             for (int i = 50; i > 0; i--)
