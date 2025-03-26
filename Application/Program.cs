@@ -1,7 +1,7 @@
-﻿using LogComponent;
-
-namespace LogUsers
+﻿namespace LogUsers
 {
+    using LogComponent.Services;
+    using LogComponent.Services.Interfaces;
     using System.Threading;
 
     class Program

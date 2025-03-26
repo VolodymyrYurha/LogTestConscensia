@@ -1,7 +1,8 @@
-﻿using System.Collections.Concurrent;
-using System.Text;
+﻿using LogComponent.Models;
+using LogComponent.Services.Interfaces;
+using System.Collections.Concurrent;
 
-namespace LogComponent
+namespace LogComponent.Services
 {
     public class AsyncLog : ILog
     {

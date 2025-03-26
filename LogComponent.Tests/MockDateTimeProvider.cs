@@ -1,4 +1,6 @@
-﻿namespace LogComponent.Tests
+﻿using LogComponent.Services.Interfaces;
+
+namespace LogComponent.Tests
 {
     public class MockTimeProvider : IDateTimeProvider
     {

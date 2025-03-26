@@ -1,6 +1,6 @@
 ﻿using System.Text;
 
-namespace LogComponent
+namespace LogComponent.Models
 {
     /// <summary>
     /// This is the object that the diff. loggers (filelogger, consolelogger etc.) will operate on. The LineText() method will be called to get the text (formatted) to log
@@ -9,7 +9,7 @@ namespace LogComponent
     {
         public LogLine()
         {
-            this.Text = "";
+            Text = "";
         }
 
         /// <summary>
@@ -20,13 +20,13 @@ namespace LogComponent
         {
             StringBuilder sb = new StringBuilder();
 
-            if (this.Text.Length > 0)
+            if (Text.Length > 0)
             {
-                sb.Append(this.Text);
+                sb.Append(Text);
                 sb.Append(". ");
             }
 
-            sb.Append(this.CreateLineText());
+            sb.Append(CreateLineText());
 
             return sb.ToString();
         }

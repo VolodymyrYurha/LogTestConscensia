@@ -1,4 +1,4 @@
-﻿namespace LogComponent
+﻿namespace LogComponent.Services.Interfaces
 {
     public interface ILog
     {
