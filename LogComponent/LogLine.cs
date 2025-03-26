@@ -42,8 +42,8 @@ namespace LogComponent
         public string Text { get; set; }
 
         /// <summary>
-        /// The Timestamp is initialized when the log is added. Th
+        /// The TimeStamp is initialized when the log is added. Th
         /// </summary>
-        public virtual DateTime Timestamp { get; set; }
+        public virtual DateTime TimeStamp { get; set; }
     }
 }

@@ -10,8 +10,9 @@ namespace LogComponent
         private Thread _runThread;
         private ConcurrentQueue<LogLine> _logQueue = new ConcurrentQueue<LogLine>();
 
-        private bool _exit;
-        private bool _quitWithFlush = false;
+        private bool _exitFlag = false;
+        private bool _quitWithFlushFlag = false;
+        private bool _loppFinishedFlag = false;
         private DateTime _currentDate = DateTime.Now;
 
         public AsyncLog()
@@ -21,18 +22,18 @@ namespace LogComponent
 
             _writer = File.AppendText(@"C:\LogTest\Log" + DateTime.Now.ToString("yyyyMMdd HHmmss fff") + ".log");
 
-            _writer.Write("Timestamp".PadRight(25, ' ') + "\t" + "Data".PadRight(15, ' ') + "\t" + Environment.NewLine);
+            _writer.Write("TimeStamp".PadRight(25, ' ') + "\t" + "Data".PadRight(15, ' ') + "\t" + Environment.NewLine);
             _writer.AutoFlush = true;
 
             _runThread = new Thread(MainLoop);
             _runThread.Start();
         }
-            
+
         private void MainLoop()
         {
-            while (!_exit)
+            while (!_exitFlag)
             {
-                if (_logQueue.TryDequeue(out LogLine logLine))
+                if (_logQueue.TryDequeue(out LogLine? logLine))
                 {
                     StringBuilder stringBuilder = new StringBuilder();
 
@@ -44,7 +45,7 @@ namespace LogComponent
                         _writer.AutoFlush = true;
                     }
 
-                    stringBuilder.Append(logLine.Timestamp.ToString("yyyy-MM-dd HH:mm:ss:fff"));
+                    stringBuilder.Append(logLine.TimeStamp.ToString("yyyy-MM-dd HH:mm:ss:fff"));
                     stringBuilder.Append("\t");
                     stringBuilder.Append(logLine.LineText());
                     stringBuilder.Append("\t");
@@ -53,28 +54,43 @@ namespace LogComponent
                     _writer.Write(stringBuilder.ToString());
                 }
 
-                if (_quitWithFlush && _logQueue.IsEmpty)
+                if (_quitWithFlushFlag && _logQueue.IsEmpty)
                 {
-                    _exit = true;
+                    _exitFlag = true;
                 }
 
                 Thread.Sleep(50);
             }
+            FinalizeLogging();
         }
 
         public void StopWithoutFlush()
         {
-            _exit = true;
+            _exitFlag = true;
         }
 
         public void StopWithFlush()
         {
-            _quitWithFlush = true;
+            _quitWithFlushFlag = true;
+
+            // Making a loop to wait for the log queue to be empty
+            while(!_loppFinishedFlag)
+            {
+                Thread.Sleep(50);
+            }
         }
 
         public void Write(string text)
         {
-            _logQueue.Enqueue(new LogLine() { Text = text, Timestamp = DateTime.Now });
+            _logQueue.Enqueue(new LogLine() { Text = text, TimeStamp = DateTime.Now });
+        }
+
+        private void FinalizeLogging()
+        {
+            _writer?.Flush();
+            _writer?.Close();
+            _writer?.Dispose();
+            _loppFinishedFlag = true;
         }
     }
 }
