@@ -1,0 +1,25 @@
+Reviewed and analyzed the documentation for the test task.
+Added Git to the project for version control.
+
+Below are the commit descriptions:
+- Used ConcurrentQueue as a predefined solution to handle the queue problem.
+- Rearranged fields and fixed naming conventions.
+- Avoided the usage of the this. operator.
+
+StopWithFlush method behavior:
+- Ensured StopWithFlush method only returns after the queue is empty.
+- Tested basic Write functionality and verified StopWithFlush waits for the queue to be processed.
+- Added Bogus for generating fake data for testing.
+
+Midnight Log Separation:
+- Fixed a bug in the "if" statement responsible for log file creation.
+- Implemented DateTimeProvider mock to facilitate tests with different timestamps.
+
+Avoiding Hardcoded Directories:
+- Added DirectoryProvider to avoid hardcoded paths.
+- Adapted the provider for both test and application environments.
+- Simplified log message formatting by replacing StringBuilder with simplified logic.
+
+Final Steps:
+- Structured the solution by organizing the code into Service, Model, and Interface folders.
+- Adjusted namespaces to match the new folder structure.
